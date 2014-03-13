@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+
+require "pathname"
+$:.unshift Pathname.new(__FILE__).realpath.join('../../lib') if $0 == __FILE__
+
+require 'gosu'
+require 'antsim'
+require 'tapp'
+
+class Game < Gosu::Window
+  def initialize
+    super(640, 480, false, 100)
+
+    self.caption = 'hello world'
+
+    @ant_image = Gosu::Image.new(self, 'bin/assets/ant.gif')
+    @pheromone_text = Gosu::Font.new(self, Gosu::default_font_name, 10)
+  end
+
+  def sim
+    @sim ||= Antsim::Sim.new
+  end
+
+  def update
+    sim.step
+  end
+
+  def draw
+    draw_background
+    sim.ants.each do |ant|
+      @ant_image.draw_rot(ant.x * 32, ant.y * 32, 0, ant.rot)
+    end
+
+    sim.each_pheromones do |x, y, pheromone|
+      @pheromone_text.draw(pheromone.to_i.to_s, x * 32, y * 32, 1, 1.0, 1.0, Gosu::Color::BLACK)
+    end
+
+    sim.each_feeds do |x, y, feed|
+      if feed > 0
+        @pheromone_text.draw(feed, x * 32, y * 32, 1, 1.0, 1.0, Gosu::Color::RED)
+      end
+    end
+  end
+
+  def draw_background
+    draw_quad(
+      0,   0,   Gosu::Color::WHITE,
+      640, 0,   Gosu::Color::WHITE,
+      0,   480, Gosu::Color::WHITE,
+      640, 480, Gosu::Color::WHITE,
+      0)
+  end
+
+end
+
+game = Game.new
+game.show
